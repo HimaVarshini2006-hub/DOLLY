@@ -12,7 +12,11 @@ export async function POST(req: Request) {
   fal.config({ credentials: process.env.FAL_KEY });
   try {
     const { request_id } = await fal.queue.submit(MODEL, {
-      input: { image_url: image, prompt: `${prompt || ""}. Camera: ${preset.model}.`, duration: String(duration) },
+      input: {
+        image_url: image,
+        prompt: `${prompt || ""}. Camera: ${preset.model}.`,
+        duration: (duration === 10 ? "10" : "5") as "5" | "10",
+      },
     });
     return Response.json({ id: request_id });
   } catch {
