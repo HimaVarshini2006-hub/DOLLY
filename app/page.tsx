@@ -49,7 +49,11 @@ export default function Studio() {
   async function generate() {
     if (!img || c > credits) return;
     setBusy(true); setVideo(""); setCredits((x) => x - c); setStatus("Queued…");
-    const res = await (await fetch("/api/generate", { method: "POST", body: JSON.stringify({ image: img, prompt, presetId: preset.id, duration: dur }) })).json();
+    const response = await fetch("/api/generate", { method: "POST", body: JSON.stringify({ image: img, prompt, presetId: preset.id, duration: dur }) });
+    const res = await response.json();
+    if (!response.ok) {
+      setCredits((x) => x + c); setStatus(res.error || "Unable to start render."); setBusy(false); return;
+    }
     let url = "";
     if (res.mock) {
       setStatus("Rendering preview (no video key set)…");

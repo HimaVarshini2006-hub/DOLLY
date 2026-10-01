@@ -4,9 +4,27 @@ import { PRESETS } from "@/lib/presets";
 const MODEL = "fal-ai/kling-video/v1.6/standard/image-to-video";
 
 export async function POST(req: Request) {
-  const { image, prompt, presetId, duration } = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "Request body must be valid JSON." }, { status: 400 });
+  }
+
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return Response.json({ error: "Request body must be a JSON object." }, { status: 400 });
+  }
+
+  const { image, prompt, presetId, duration } = body as {
+    image?: unknown;
+    prompt?: unknown;
+    presetId?: unknown;
+    duration?: unknown;
+  };
   const preset = PRESETS.find((p) => p.id === presetId);
-  if (!image || !preset) return Response.json({ error: "Missing image or move." }, { status: 400 });
+  if (typeof image !== "string" || !image || !preset || (prompt !== undefined && typeof prompt !== "string") || (duration !== undefined && duration !== 5 && duration !== 10)) {
+    return Response.json({ error: "Image, move, prompt, or duration is invalid." }, { status: 400 });
+  }
   // No key set: tell the client to use the simulated render so the demo never dead-ends.
   if (!process.env.FAL_KEY) return Response.json({ mock: true });
   fal.config({ credentials: process.env.FAL_KEY });
@@ -20,6 +38,6 @@ export async function POST(req: Request) {
     });
     return Response.json({ id: request_id });
   } catch {
-    return Response.json({ mock: true });
+    return Response.json({ error: "Video generation is temporarily unavailable." }, { status: 502 });
   }
 }
